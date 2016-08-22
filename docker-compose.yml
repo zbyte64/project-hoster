@@ -1,0 +1,25 @@
+hoster:
+  build: ./hoster
+  ports:
+    - "8000"
+    - "8100"
+  volumes:
+    - ./hoster:/opt/app/
+  environment:
+    AWS_KEY: "aa"
+    AWS_SECRET: "aa"
+    AWS_BUCKET: "foo"
+    AWS_REGION: "us-east1"
+    LANDING_URL: "https://example.com"
+    REDIRECT_PROTOCOL: "http"
+    #DOMAIN_NAME
+publisher:
+  build: ./publisher
+  ports:
+    - "8000"
+  volumes:
+    - ./publisher:/opt/app/
+  environment:
+    AWS_KEY: "aa"
+    AWS_SECRET: "aa"
+    AWS_BUCKET: "foo"

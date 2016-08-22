@@ -3,7 +3,8 @@ var bodyParser = require('body-parser');
 var _ = require('lodash');
 var {domainNameToHostName, redirectDomainName, writeDomains, writeRedirects} = require('./state');
 
-export var rpc = express();
+var rpc = express();
+exports.rpc = rpc;
 
 rpc.use(bodyParser.json());
 

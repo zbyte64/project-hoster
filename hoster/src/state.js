@@ -1,12 +1,15 @@
 var knox = require('knox');
 var _ = require('lodash');
+var {SyncWriter} = require('./SyncWriter');
 
 
-export var domainNameToHostName = {};
-export var redirectDomainName = {};
+var domainNameToHostName = {};
+exports.domainNameToHostName = domainNameToHostName;
+var redirectDomainName = {};
+exports.redirectDomainName = redirectDomainName;
 
 
-export function makeKnoxClient() {
+function makeKnoxClient() {
   //read credentials from environ
   return knox.createClient({
     region: process.env.AWS_REGION,
@@ -18,10 +21,12 @@ export function makeKnoxClient() {
 
 var knoxClient = makeKnoxClient();
 
-export const DOMAINS_KEY = '/domains.json';
-export const REDIRECTS_KEY = '/redirects.json';
+const DOMAINS_KEY = '/domains.json';
+const REDIRECTS_KEY = '/redirects.json';
+exports.DOMAINS_KEY = DOMAINS_KEY;
+exports.REDIRECTS_KEY = REDIRECTS_KEY;
 
-export function _writeState(key, state) {
+function _writeState(key, state) {
   return new Promise(function(resolve, reject) {
     var payload = JSON.stringify(state);
 
@@ -40,7 +45,7 @@ export function _writeState(key, state) {
   });
 }
 
-export function _readState(key) {
+function _readState(key) {
   return new Promise(function(resolve, reject) {
     knoxClient.get(key).on('response', function(res){
       if (200 == res.statusCode) {
@@ -63,68 +68,31 @@ export function _readState(key) {
 }
 
 
-class SyncWriter {
-  /* Ensures only one is writing state and tracks if new updates need processing */
-  //CONSIDER: if the program dies prematurely then queued syncs may be lost!
-  constructor(key, state) {
-    this.key = key;
-    this.state = state;
-    //tracks that an update is in progress
-    this.lock = false;
-    //tracks whether an update is scheduled
-    this.flagged = false;
-  }
+var syncDomainsWriter = SyncWriter(_.partial(_writeState, DOMAINS_KEY, domainNameToHostName));
+var syncRedirectsWriter = SyncWriter(_.partial(_writeState, REDIRECTS_KEY, redirectDomainName));
 
-  flag() {
-    /* flag that we sync needs to happen */
-    if (!this.lock) {
-      this.sync(new Date());
-    } else {
-      this.flagged = new Date();
-    }
-  }
-
-  sync(timestamp) {
-    this.lock = timestamp;
-    return _writeState(this.key, this.state).then(this.clearLock, this.clearLock);
-  }
-
-  clearLock() {
-    //processed the flagged update
-    if (this.flagged == this.lock) {
-      this.flagged = null;
-      this.lock = null;
-      return;
-    }
-    //an update was flagged while doing our update
-    if (this.flagged) {
-      this.sync(this.flagged)
-    } else {
-      //no updates to sync
-      this.lock = null;
-    }
-  }
-}
-
-var syncDomainsWriter = SyncWriter(DOMAINS_KEY, domainNameToHostName);
-var syncRedirectsWriter = SyncWriter(REDIRECTS_KEY, redirectDomainName);
-
-export function writeDomains() {
+function writeDomains() {
   syncDomainsWriter.flag();
 }
 
-export function writeRedirects() {
+function writeRedirects() {
   syncRedirectsWriter.flag();
 }
 
-export function loadDomains() {
+//TODO loadX should clear previous state
+function loadDomains() {
   return _readState(DOMAINS_KEY).then(state => {
     _.assign(domainNameToHostName, state);
   });
 }
 
-export function loadRedirects() {
+function loadRedirects() {
   return _readState(REDIRECTS_KEY).then(state => {
     _.assign(redirectDomainName, state);
   });
 }
+
+exports.writeDomains = writeDomains;
+exports.writeRedirects = writeRedirects;
+exports.loadDomains = loadDomains;
+exports.loadRedirects = loadRedirects;

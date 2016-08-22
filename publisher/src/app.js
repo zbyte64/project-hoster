@@ -21,14 +21,6 @@ function makeKnoxClient() {
 exports.makeKnoxClient = makeKnoxClient;
 
 var knoxClient = makeKnoxClient();
-
-var hosterUrl = process.env.HOSTER_URL;
-if (!hosterUrl && process.env.HOSTER_1_PORT_8100_TCP_PORT) {
-  hosterUrl = process.env.HOSTER_1_PORT_8100_TCP_ADDR + ':' + process.env.HOSTER_1_PORT_8100_TCP_PORT;
-}
-
-
-
 var app = express();
 var json_parser = bodyParser.json();
 app.use(jwt({secret: process.env.SECRET}));

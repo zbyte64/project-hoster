@@ -3,8 +3,9 @@ var express = require('express');
 var _ = require('lodash');
 var {domainNameToHostName, redirectDomainName} = require('./state');
 
-export var app = express();
 
+var app = express();
+exports.app = app;
 
 const proto = process.env.REDIRECT_PROTOCOL;
 const url_prefix = `${proto}://${process.env.AWS_BUCKET}.s3-website-${process.env.AWS_REGION}.amazonaws.com/`;

@@ -10,3 +10,5 @@ function rpc(endpoint, data) {
     }
   });
 }
+
+exports.rpc = rpc;

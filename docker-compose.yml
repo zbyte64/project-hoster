@@ -3,8 +3,8 @@ hoster:
   ports:
     - "8000"
     - "8100"
-  volumes:
-    - ./hoster:/opt/app/
+  #volumes:
+  #  - ./hoster:/opt/app/
   environment:
     AWS_KEY: "aa"
     AWS_SECRET: "aa"
@@ -12,14 +12,25 @@ hoster:
     AWS_REGION: "us-east1"
     LANDING_URL: "https://example.com"
     REDIRECT_PROTOCOL: "http"
-    #DOMAIN_NAME
+    DOMAIN_NAME: "hosted.com"
 publisher:
   build: ./publisher
   ports:
     - "8000"
-  volumes:
-    - ./publisher:/opt/app/
+  #volumes:
+  #  - ./publisher:/opt/app/
   environment:
     AWS_KEY: "aa"
     AWS_SECRET: "aa"
     AWS_BUCKET: "foo"
+    AWS_REGION: "us-east1"
+    SECRET: "foo"
+    PURGE_TOKEN: "foo"
+cacher:
+  build: ./cacher
+  ports:
+    - "80:80"
+  links:
+    - hoster
+  environment:
+    PURGE_TOKEN: "foo"

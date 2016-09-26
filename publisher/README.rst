@@ -1,14 +1,12 @@
-Writes website content to an S3 Bucket.
+Writes website content to IPFS
 
 
 Environment
 ===========
 
-* **AWS_KEY**
-* **AWS_SECRET**
-* **AWS_BUCKET**
-* **AWS_REGION**
+* **IPFS_API_URL** Path to IPFS api
 * **SECRET** Secret key for validating JWT
+* **HOSTER_URL** Path to hoster api
 
 
 Ports
@@ -22,7 +20,9 @@ API
 
 **HTTP Header** `Authorization: Bearer [JWT]`; token must encode a value for the key `hostname`
 
-**/publish** Accepts multipart requests and each attached file will be published.
+**/upload ** Accepts multipart request to upload a file, returns JSON with the url and identifier
+
+**/publish** Accepts a JSON dictionary of paths to identifiers 
 
 **/set-domain** Accepts JSON object with key `domain` to set the canonical domain.
 

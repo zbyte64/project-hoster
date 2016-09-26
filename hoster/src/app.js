@@ -1,9 +1,9 @@
 var {rpc} = require('./rpc');
 var {app} = require('./serve');
-var {loadDomains, loadRedirects} = require('./state');
+var {loadState} = require('./state');
 
 
-Promise.all([loadDomains(), loadRedirects()]).then(function() {
+loadState().then(function() {
   var server = app.listen(8000, function() {
     var host = server.address().address;
     var port = server.address().port;

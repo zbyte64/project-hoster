@@ -1,12 +1,9 @@
-Hosts domains from an S3 Bucket. Top folders are treated as hostnames.
+Hosts domains from IPFS.
 
 Environment
 ===========
 
-* **AWS_KEY**
-* **AWS_SECRET**
-* **AWS_BUCKET**
-* **AWS_REGION**
+* **IPFS_API_URL** Path to IPFS api
 * **DOMAIN_NAME**
 * **LANDING_URL**
 * **REDIRECT_PROTOCOL** http or https
@@ -22,17 +19,15 @@ Ports
 Serve
 =====
 
-Content is served by directly piping non-privileged S3 requests from a bucket.
-Top level folders are served when host matches: `foldername.DOMAIN_NAME`
-Associating a Host to a Domain will serve the host folder at the specified domain and redirect `foldername.DOMAIN_NAME` to the Domain.
-Associating a Redirect to a Domain will cause a redirect to domain is host matches redirect.
-
+1. A hostname is associated to an IPFS (directory) object that acts as a sitemap
+2. A domain may be associated to a hostname and will be the target of hostname redirects (canonical domain)
+3. An extra domain may be pointed to a hostname which will cause a redirect to the canonical address
 
 
 RPC
 ===
 
-Your Port Number Will Vary (if you run docker). State is stored in the S3 Bucket.
+Your Port Number Will Vary (if you run docker). State is stored on IPFS and is looked up through IPNS.
 
 
 View State:
@@ -40,6 +35,13 @@ View State:
 ::
 
   curl http://127.0.0.1:32913/
+
+
+Associate Hostname to IPFS object:
+
+::
+
+  curl -i -d "{\"awesome-client\": \"DEADBEAF\"}" -H "Content-Type: application/json" http://127.0.0.1:32913/set-hostnames
 
 
 Associate Host to Domain:
@@ -53,4 +55,4 @@ Set Domain Redirect:
 
 ::
 
-  curl -i -d "{\"awesome.io\": \"www.awesome.io\"}" -H "Content-Type: application/json" http://127.0.0.1:32913/set-redirect-names
+  curl -i -d "{\"awesome.io\": \"awesome-client\"}" -H "Content-Type: application/json" http://127.0.0.1:32913/set-redirect-names

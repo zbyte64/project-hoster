@@ -1,30 +1,43 @@
-var request = require('request');
+var {ipfs} = require('./connections');
 var express = require('express');
 var _ = require('lodash');
-var {domainNameToHostName, redirectDomainName} = require('./state');
+var {state} = require('./state');
+const promisify = require('promisify-es6')
 
 
 var app = express();
 exports.app = app;
 
 const proto = process.env.REDIRECT_PROTOCOL;
-const url_prefix = `${proto}://${process.env.AWS_BUCKET}.s3-website-${process.env.AWS_REGION}.amazonaws.com/`;
 
-//serve = require(s3 to a result
-function serve(res, folderName, path) {
+const rawIPFSSend = promisify(ipfs.send);
+
+
+function serve(res, hostname, path) {
+  let multihash = state.hostNameToHashId[hostname];
+
   //unrecognized host
-  if (!folderName) {
+  if (!multihash) {
     return res.sendStatus(404);
   }
 
-  //serve = require(published folder
-  var url = `${url_prefix}${folderName}${path}`;
+  return ipfs.object.links(multihash).then(links => {
+    let link = _.find(links, x => x.name == path);
+    if (!link) return res.sendStatus(404);
 
-  var r = request(url);
-  r.on('response', function(resp) {
-    r.pipe(res);
+    //inefficient as it loads entire result to memory:
+    //ipfs.object.data(link.mulithash()).then(r.send)
+    return rawIPFSSend({
+      path: 'object/data',
+      args: multihash
+    }).then(result => {
+      if (typeof result.pipe === 'function') {
+        result.pipe(res);
+      } else {
+        res.send(200, result);
+      }
+    });
   });
-  return;
 }
 
 /* GET only requests */
@@ -69,9 +82,9 @@ if (process.env.DOMAIN_NAME) {
     } else {
       // http://<aDomainName>/
       //must be canonical or redirect
-      hostname = domainNameToHostName[incHostName];
+      hostname = state.domainNameToHostName[incHostName];
       if (!hostname) {
-        var redirectTo = redirectDomainName[incHostName];
+        var redirectTo = state.redirectDomainName[incHostName];
         if (redirectTo) {
           return res.redirect(`${proto}://${redirectTo}/`);
         } else {

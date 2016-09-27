@@ -3,13 +3,13 @@ hoster:
   ports:
     - "8000"
     - "8100"
+  links:
+    - ipfs
   #volumes:
   #  - ./hoster:/opt/app/
   environment:
-    AWS_KEY: "aa"
-    AWS_SECRET: "aa"
-    AWS_BUCKET: "foo"
-    AWS_REGION: "us-east1"
+    IPFS_API_URL: "http://ipfs:5001"
+    IPFS_GATEWAY_URL: "http://ipfs:8080"
     LANDING_URL: "https://example.com"
     REDIRECT_PROTOCOL: "http"
     DOMAIN_NAME: "hosted.com"
@@ -17,13 +17,14 @@ publisher:
   build: ./publisher
   ports:
     - "8000"
+  links:
+    - ipfs
+    - hoster
   #volumes:
   #  - ./publisher:/opt/app/
   environment:
-    AWS_KEY: "aa"
-    AWS_SECRET: "aa"
-    AWS_BUCKET: "foo"
-    AWS_REGION: "us-east1"
+    IPFS_API_URL: "http://ipfs:5001"
+    HOSTER_RPC_URL: "http://hoster:8100"
     SECRET: "foo"
     PURGE_TOKEN: "foo"
 cacher:
@@ -34,3 +35,13 @@ cacher:
     - hoster
   environment:
     PURGE_TOKEN: "foo"
+ipfs:
+  image: ipfs/go-ipfs
+  #build: https://github.com/ipfs/go-ipfs.git
+  ports:
+    - "4001"
+    - "4002/udp"
+    - "5001"
+    - "8080"
+  #volumes:
+  #  - ./ipfs-data:/data/ipfs

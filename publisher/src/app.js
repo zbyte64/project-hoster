@@ -60,6 +60,8 @@ app.post('/publish', json_parser, function(req, res) {
   }).then(dagNode => {
     let payload = {};
     payload[hostname] = dagNode;
+    //TODO ensure site is pinned, should this be managed by hoster or publisher?
+    //ipfs.pin.add(dagNode.mulithash())
     return rpc('set-hostnames', payload).then(x => {
       return res.json(dagNode);
     });

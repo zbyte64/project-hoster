@@ -6,7 +6,7 @@ Environment
 
 * **IPFS_API_URL** Path to IPFS api
 * **SECRET** Secret key for validating JWT
-* **HOSTER_URL** Path to hoster api
+* **HOSTER_RPC_URL** Path to hoster api
 
 
 Ports
@@ -22,7 +22,7 @@ API
 
 **/upload ** Accepts multipart request to upload a file, returns JSON with the url and identifier
 
-**/publish** Accepts a JSON dictionary of paths to identifiers 
+**/publish** Accepts a JSON dictionary of paths to identifiers
 
 **/set-domain** Accepts JSON object with key `domain` to set the canonical domain.
 

@@ -12,7 +12,9 @@ var state = {
 
 function writeState() {
   //store our state and have our id resolve to that state
-  return ipfs.name.resolve().then(currentMultiHash => {
+  return ipfs.id().then(selfInfo => {
+    return ipfs.name.resolve(selfInfo.id);
+  }).then(currentMultiHash => {
     if (currentMultiHash) {
       return ipfs.object.patch.setData(currentMultiHash, state);
     } else {
@@ -24,22 +26,23 @@ function writeState() {
 }
 
 function readState() {
-  ipfs.id().then(selfInfo => {
-    return ipfs.objects.get(selfInfo.id).then(x => x.Data);
-  });
+  return ipfs.id().then(selfInfo => {
+    return ipfs.name.resolve(selfInfo.id)
+  }).then(currentNodeInfo => {
+    if (!currentNodeInfo || !currentNodeInfo.Path) return {};
+    let currentMultiHash = _.last(currentNodeInfo.Path.split('/'));
+    return ipfs.object.data(currentMultiHash);
+  })
 }
 
-var syncStateWriter = SyncWriter(writeState);
+var syncStateWriter = new SyncWriter(writeState);
 
 function syncState() {
   syncStateWriter.flag();
 }
 
 function loadState() {
-  return ipfs.name.resolve().then(currentMultiHash => {
-    if (!currentMultiHash) return {};
-    return ipfs.object.data(currentMultiHash);
-  }).then(data => {
+  return readState().then(data => {
     return _.assign(state, data);
   });
 }

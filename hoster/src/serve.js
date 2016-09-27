@@ -1,8 +1,9 @@
-var {ipfs} = require('./connections');
-var express = require('express');
-var _ = require('lodash');
-var {state} = require('./state');
-const promisify = require('promisify-es6')
+const {ipfs} = require('./connections');
+const express = require('express');
+const _ = require('lodash');
+const {state} = require('./state');
+const promisify = require('promisify-es6');
+const request = require('request');
 
 
 var app = express();
@@ -21,6 +22,9 @@ function serve(res, hostname, path) {
     return res.sendStatus(404);
   }
 
+  return request(`${process.env.IPFS_GATEWAY_URL}/ipfs/${multihash}${path}`).pipe(res)
+
+  /*
   return ipfs.object.links(multihash).then(links => {
     let link = _.find(links, x => x.name == path);
     if (!link) return res.sendStatus(404);
@@ -38,12 +42,12 @@ function serve(res, hostname, path) {
       }
     });
   });
+  */
 }
 
 /* GET only requests */
 function getOnly(req, res, next) {
   if (req.method.toLowerCase() !== 'get') {
-    console.log("bad method:", req.method);
     return res.sendStatus(400);
   }
   next();
@@ -78,7 +82,7 @@ if (process.env.DOMAIN_NAME) {
       // http://<hostname>.<OLD_DOMAIN_NAME>/
       // redirect to http://<hostname>.<DOMAIN_NAME>/
       hostname = incHostName.split(OLD_APP_DOMAIN_NAME, 2)[0];
-      return res.redirect(`${proto}://${hostname}${APP_DOMAIN_NAME}/`);
+      return res.redirect(`${proto}://${hostname}${APP_DOMAIN_NAME}${req.path}`);
     } else {
       // http://<aDomainName>/
       //must be canonical or redirect
@@ -86,7 +90,7 @@ if (process.env.DOMAIN_NAME) {
       if (!hostname) {
         var redirectTo = state.redirectDomainName[incHostName];
         if (redirectTo) {
-          return res.redirect(`${proto}://${redirectTo}/`);
+          return res.redirect(`${proto}://${redirectTo}${req.path}`);
         } else {
           return res.sendStatus(404);
         }

@@ -1,4 +1,4 @@
-const expect = require('expect.js');
+const assert = require('assert');
 const _ = require('lodash');
 
 const {sendFiles, jsonPost} = require('./connections');
@@ -12,7 +12,7 @@ describe('publisher', () => {
   it('uploads files and returns JSON info', () => {
     let p = sendFiles(`${SERVER_URL}/upload`, {file: new Buffer("hello world")});
     return p.then(function(sucess) {
-      expect(JSON.parse(sucess)).to.be({
+      assert.deepEqual(JSON.parse(sucess), {
         "file":[{
           "path":"Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
           "hash":"Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
@@ -20,41 +20,43 @@ describe('publisher', () => {
         }]
       });
     }, function(error) {
-      expect().fail(error)
+      assert.assert(false, error);
     })
   });
 
   it('publishes a site', () => {
     let p = jsonPost(`${SERVER_URL}/publish`, {'readme': README_HASH});
     return p.then(function(sucess) {
-      expect(sucess).to.be({
+      assert.deepEqual(JSON.parse(sucess), {
         Data: '\b\u0001',
+        Hash: "QmNtssVPTzUsTy7ZiT8XsiSCUcg9xRkZLM4bTAAntbf6uW",
         Links: [{
           Name: 'readme',
           Size: 1106,
           Hash: 'QmQtb4As9XSjLust2gRGAyyc76NghPbfZjwqZGmRpRa1Qg'
-        }]
+        }],
+        Size: 1159
       });
     }, function(error) {
-      expect().fail(error)
+      assert.assert(false, error);
     })
   });
 
   it('sets a domain', () => {
     let p = jsonPost(`${SERVER_URL}/set-domain`, {'examplesite': SITE_HASH});
     return p.then(function(sucess) {
-      expect(sucess).to.be('ok');
+      assert.equal(sucess, 'OK');
     }, function(error) {
-      expect().fail(error)
+      assert.assert(false, error);
     })
   });
 
   it('sets a redirect', () => {
     let p = jsonPost(`${SERVER_URL}/set-redirect-domain`, {'www.readme.com': 'examplesite'});
     return p.then(function(sucess) {
-      expect(sucess).to.be('ok');
+      assert.equal(sucess, 'OK');
     }, function(error) {
-      expect().fail(error)
+      assert.assert(false, error);
     })
   });
 })

@@ -5,8 +5,8 @@ hoster:
     - "8100"
   links:
     - ipfs
-  #volumes:
-  #  - ./hoster:/opt/app/
+  volumes:
+    - ./hoster/src:/opt/app/src
   environment:
     IPFS_API_URL: "http://ipfs:5001"
     IPFS_GATEWAY_URL: "http://ipfs:8080"
@@ -20,8 +20,8 @@ publisher:
   links:
     - ipfs
     - hoster
-  #volumes:
-  #  - ./publisher:/opt/app/
+  volumes:
+    - ./publisher/src:/opt/app/src
   environment:
     IPFS_API_URL: "http://ipfs:5001"
     HOSTER_RPC_URL: "http://hoster:8100"
@@ -49,6 +49,8 @@ tests:
   build: ./tests
   environment:
     SECRET: "foo"
+  volumes:
+    - ./tests/src:/opt/app/src
   links:
     - cacher
     - ipfs

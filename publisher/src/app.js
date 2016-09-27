@@ -3,8 +3,7 @@ var express = require('express');
 var _ = require('lodash');
 var Busboy = require('busboy');
 var jwt = require('express-jwt');
-const DAGNode = require('ipfs-merkle-dag').DAGNode
-const DAGLink = require('ipfs-merkle-dag').DAGLink
+const {DAGNode, DAGLink} = require('ipfs-merkle-dag');
 
 var {rpc} = require('./rpc');
 var {ipfs} = require('./connections');
@@ -13,7 +12,7 @@ var {ipfs} = require('./connections');
 var app = express();
 var json_parser = bodyParser.json();
 app.use(jwt({secret: process.env.SECRET}));
-app.user(function(req, res, next) {
+app.use(function(req, res, next) {
   if (!req.user.hostname) {
     return res.sendStatus(403)
   }
@@ -21,11 +20,13 @@ app.user(function(req, res, next) {
 });
 
 app.post('/upload', function(req, res) {
-  var hostname = req.user.hostname;
-  var busboy = new Busboy({ headers: req.headers });
-  var uploads = [];
-  var results = {};
+  let hostname = req.user.hostname;
+  console.log("upload headers:", req.headers);
+  let busboy = new Busboy({ headers: req.headers });
+  let uploads = [];
+  let results = {};
   busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
+    console.log("File:", fieldname, file)
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on
     file.on('data', function(data) {
       //or do we use? ipfs.files.add({path:'', content: stream})
@@ -36,27 +37,33 @@ app.post('/upload', function(req, res) {
       uploads.push(p);
     });
   });
+  busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
+    console.log('Field [' + fieldname + ']: value: ' + inspect(val));
+  });
+
   //TODO settle on response shape
   busboy.on('finish', function() {
+    console.log("upload complete", uploads)
     Promise.all(uploads).then(function(success) {
-      res.writeHead(200, { 'Connection': 'close' });
-      res.end(results);
+      res.status(200).json(results);
     }, function(error) {
-      res.writeHead(500, { 'Connection': 'close' });
-      res.end("Error uploading");
+      console.error(error);
+      res.status(500).send(error.toString());
     });
   });
-  return req.pipe(busboy);
+  req.pipe(busboy);
 });
 
 app.post('/publish', json_parser, function(req, res) {
-  var hostname = req.user.hostname;
-  var sitemap = req.body;
+  let hostname = req.user.hostname;
+  let sitemap = req.body;
+  console.log("publish sitemap:", sitemap)
   //upload to ipfs as directory object, then rpc to host
 
-  var index_object = DAGNode("\u0008\u0001");
+  let index_object = new DAGNode("\u0008\u0001");
   let promises = _.map(sitemap, (object_id, name) => {
     return ipfs.object.get(object_id).then(node_link => {
+      console.log("Node link:", node_link)
       index_object.addNodeLink(name, node_link);
     });
   });
@@ -64,29 +71,30 @@ app.post('/publish', json_parser, function(req, res) {
   Promise.all(promises).then(x => {
     return ipfs.object.put(index_object);
   }).then(dagNode => {
+    console.log("sitemap dagnode:", dagNode);
     let payload = {};
     payload[hostname] = dagNode;
     //TODO ensure site is pinned, should this be managed by hoster or publisher?
     //ipfs.pin.add(dagNode.mulithash())
     return rpc('set-hostnames', payload).then(x => {
-      return res.json(dagNode);
+      return res.status(200).json(dagNode);
     });
   }).catch(error => {
     console.error(error);
-    res.sendStatus(500, error.toString());
+    res.status(500).send(error.toString());
   });
 });
 
 app.post('/set-domain', json_parser, function(req, res) {
   //associate a hostname to a domain
-  var hostname = req.user.hostname;
-  var domain = req.body.domain;
-  var payload = {};
+  let hostname = req.user.hostname;
+  let domain = req.body.domain;
+  let payload = {};
   payload[hostname] = domain;
 
-  return rpc('set-domain-names', payload)
-    .then(function(res) {
-      console.log("Sent domain name", res.text())
+  rpc('set-domain-names', payload)
+    .then(function(rpc_result) {
+      console.log("Sent domain name", hostname, domain)
       res.sendStatus(200);
     }, function(err) {
       console.error("Failed to send domain name: ", err)
@@ -96,14 +104,14 @@ app.post('/set-domain', json_parser, function(req, res) {
 
 app.post('/set-redirect-domain', json_parser, function(req, res) {
   //associate a redirect domain name to a hostname
-  var hostname = req.user.hostname;
-  var domain = req.body.domain;
-  var payload = {};
+  let hostname = req.user.hostname;
+  let domain = req.body.domain;
+  let payload = {};
   // from -> to
   payload[domain] = hostname;
 
-  return rpc('set-redirect-names', payload)
-    .then(function(res) {
+  rpc('set-redirect-names', payload)
+    .then(function(rpc_result) {
       console.log("Sent redirect domain name")
       res.sendStatus(200);
     }, function(err) {

@@ -1,0 +1,14 @@
+machine:
+    services:
+        - docker
+    python:
+        version: 3.5.0
+dependencies:
+    override:
+        - docker-compose pull
+        - docker-compose build
+test:
+    override:
+        - docker-compose run tests
+    post:
+        - docker-compose stop

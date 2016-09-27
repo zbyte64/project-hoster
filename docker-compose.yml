@@ -45,3 +45,12 @@ ipfs:
     - "8080"
   #volumes:
   #  - ./ipfs-data:/data/ipfs
+tests:
+  build: ./tests
+  environment:
+    SECRET: "foo"
+  links:
+    - cacher
+    - ipfs
+    - hoster
+    - publisher

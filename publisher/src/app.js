@@ -13,6 +13,12 @@ var {ipfs} = require('./connections');
 var app = express();
 var json_parser = bodyParser.json();
 app.use(jwt({secret: process.env.SECRET}));
+app.user(function(req, res, next) {
+  if (!req.user.hostname) {
+    return res.sendStatus(403)
+  }
+  next()
+});
 
 app.post('/upload', function(req, res) {
   var hostname = req.user.hostname;

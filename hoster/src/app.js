@@ -18,4 +18,7 @@ loadState().then(function() {
 
     console.log(`RPC Hoster is listening at http://${host}:${port}`)
   });
+}).catch(error => {
+  console.error("Error loading state");
+  console.error(error);
 })

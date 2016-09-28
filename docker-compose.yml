@@ -49,6 +49,7 @@ tests:
   build: ./tests
   environment:
     SECRET: "foo"
+    DOMAIN_NAME: "hosted.com"
   volumes:
     - ./tests/src:/opt/app/src
   links:

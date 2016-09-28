@@ -38,25 +38,25 @@ describe('publisher', () => {
         Size: 1159
       });
     }, function(error) {
-      assert.assert(false, error);
+      assert(false, error);
     })
   });
 
-  it('sets a domain', () => {
-    let p = jsonPost(`${SERVER_URL}/set-domain`, {'examplesite': SITE_HASH});
+  it('sets the canonical domain', () => {
+    let p = jsonPost(`${SERVER_URL}/set-domain`, {'domain': 'readme.com'});
     return p.then(function(sucess) {
       assert.equal(sucess, 'OK');
     }, function(error) {
-      assert.assert(false, error);
+      assert(false, error);
     })
   });
 
   it('sets a redirect', () => {
-    let p = jsonPost(`${SERVER_URL}/set-redirect-domain`, {'www.readme.com': 'examplesite'});
+    let p = jsonPost(`${SERVER_URL}/set-redirect-domain`, {'domain': 'www.readme.com'});
     return p.then(function(sucess) {
       assert.equal(sucess, 'OK');
     }, function(error) {
-      assert.assert(false, error);
+      assert(false, error);
     })
   });
-})
+});

@@ -3,6 +3,7 @@ var {app} = require('./serve');
 var {loadState} = require('./state');
 
 
+console.log("Loading state from IPFS...");
 loadState().then(function() {
   var server = app.listen(8000, function() {
     var host = server.address().address;

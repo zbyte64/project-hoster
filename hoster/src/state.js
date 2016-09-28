@@ -1,27 +1,44 @@
-var _ = require('lodash');
-var {ipfs} = require('./connections');
-var {SyncWriter} = require('./SyncWriter');
+const _ = require('lodash');
+const {DAGNode} = require('ipfs-merkle-dag');
+const bs58 = require('bs58');
+const {ipfs} = require('./connections');
+const {SyncWriter} = require('./SyncWriter');
 
 
 var state = {
-  hostNameToHashId: {},
-  domainNameToHostName: {},
-  redirectDomainName: {},
+  HostNameToHashId: {},
+  DomainNameToHostName: {},
+  HostNameToDomainName: {},
+  RedirectDomainNameToHostName: {},
 }
 
 
 function writeState() {
   //store our state and have our id resolve to that state
+  //let serialized_state = JSON.stringify(state);
   return ipfs.id().then(selfInfo => {
     return ipfs.name.resolve(selfInfo.id);
-  }).then(currentMultiHash => {
-    if (currentMultiHash) {
-      return ipfs.object.patch.setData(currentMultiHash, state);
+  }).then(currentNodeInfo => {
+    let currentMultiHash = null;
+    if (currentNodeInfo && currentNodeInfo.Path) {
+      currentMultiHash = _.last(currentNodeInfo.Path.split('/'));
+    }
+    console.log("Resolved self info:", currentMultiHash)
+    let newDagNode = new DAGNode(state);
+    let bufferState = new Buffer(JSON.stringify(state))
+    if (currentMultiHash && false) {
+      return ipfs.object.patch.setData(currentMultiHash, newDagNode);
     } else {
-      return ipfs.object.put(state);
+      return ipfs.object.put(bufferState);
     }
   }).then(dagNode => {
-    return ipfs.name.publish(dagNode.multihash());
+    console.log("State dagNode:", dagNode);
+    return ipfs.name.publish('/ipfs/'+bs58.encode(dagNode.multihash()));
+  }).then(woot => {
+    console.log("State saved:", woot)
+  }).catch(error => {
+    console.log("Error saving state:")
+    console.error(error);
   });
 }
 
@@ -32,7 +49,21 @@ function readState() {
     if (!currentNodeInfo || !currentNodeInfo.Path) return {};
     let currentMultiHash = _.last(currentNodeInfo.Path.split('/'));
     return ipfs.object.data(currentMultiHash);
-  })
+  }).then(data => {
+    console.log("ReadState", data.length)
+    if (Buffer.isBuffer(data)) {
+      let jsonStr = data.toString();
+      //console.log("ReadState from buffer:", jsonStr, jsonStr.length);
+      if (!jsonStr) return {}
+      try {
+        return JSON.parse(jsonStr);
+      } catch (e) {
+        console.log("State read from IPFS did not yield valid JSON")
+        return {}
+      }
+    }
+    return data || {}
+  });
 }
 
 var syncStateWriter = new SyncWriter(writeState);
@@ -43,6 +74,7 @@ function syncState() {
 
 function loadState() {
   return readState().then(data => {
+    console.log("Loading state:", data)
     return _.assign(state, data);
   });
 }

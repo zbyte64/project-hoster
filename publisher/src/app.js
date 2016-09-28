@@ -1,12 +1,13 @@
-var bodyParser = require('body-parser');
-var express = require('express');
-var _ = require('lodash');
-var Busboy = require('busboy');
-var jwt = require('express-jwt');
+const bodyParser = require('body-parser');
+const express = require('express');
+const _ = require('lodash');
+const Busboy = require('busboy');
+const jwt = require('express-jwt');
 const {DAGNode, DAGLink} = require('ipfs-merkle-dag');
+const bs58 = require('bs58');
 
-var {rpc} = require('./rpc');
-var {ipfs} = require('./connections');
+const {rpc} = require('./rpc');
+const {ipfs} = require('./connections');
 
 
 var app = express();
@@ -26,7 +27,7 @@ app.post('/upload', function(req, res) {
   let uploads = [];
   let results = {};
   busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
-    console.log("File:", fieldname, file)
+    console.log("File:", fieldname)
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on
     file.on('data', function(data) {
       //or do we use? ipfs.files.add({path:'', content: stream})
@@ -73,7 +74,9 @@ app.post('/publish', json_parser, function(req, res) {
   }).then(dagNode => {
     console.log("sitemap dagnode:", dagNode);
     let payload = {};
-    payload[hostname] = dagNode;
+    //TODO use canonical clean-multihash
+    payload[hostname] = bs58.encode(dagNode.multihash());
+    console.log("set-hostnames:", payload)
     //TODO ensure site is pinned, should this be managed by hoster or publisher?
     //ipfs.pin.add(dagNode.mulithash())
     return rpc('set-hostnames', payload).then(x => {
@@ -89,6 +92,7 @@ app.post('/set-domain', json_parser, function(req, res) {
   //associate a hostname to a domain
   let hostname = req.user.hostname;
   let domain = req.body.domain;
+  if (!domain) return res.status(400).send("domain is required");
   let payload = {};
   payload[hostname] = domain;
 
@@ -106,6 +110,7 @@ app.post('/set-redirect-domain', json_parser, function(req, res) {
   //associate a redirect domain name to a hostname
   let hostname = req.user.hostname;
   let domain = req.body.domain;
+  if (!domain) return res.status(400).send("domain is required");
   let payload = {};
   // from -> to
   payload[domain] = hostname;

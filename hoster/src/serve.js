@@ -15,7 +15,7 @@ const rawIPFSSend = promisify(ipfs.send);
 
 
 function serve(res, hostname, path) {
-  let multihash = state.hostNameToHashId[hostname];
+  let multihash = state.HostNameToHashId[hostname];
 
   //unrecognized host
   if (!multihash) {
@@ -23,26 +23,6 @@ function serve(res, hostname, path) {
   }
 
   return request(`${process.env.IPFS_GATEWAY_URL}/ipfs/${multihash}${path}`).pipe(res)
-
-  /*
-  return ipfs.object.links(multihash).then(links => {
-    let link = _.find(links, x => x.name == path);
-    if (!link) return res.sendStatus(404);
-
-    //inefficient as it loads entire result to memory:
-    //ipfs.object.data(link.mulithash()).then(r.send)
-    return rawIPFSSend({
-      path: 'object/data',
-      args: multihash
-    }).then(result => {
-      if (typeof result.pipe === 'function') {
-        result.pipe(res);
-      } else {
-        res.send(200, result);
-      }
-    });
-  });
-  */
 }
 
 /* GET only requests */
@@ -86,16 +66,17 @@ if (process.env.DOMAIN_NAME) {
     } else {
       // http://<aDomainName>/
       //must be canonical or redirect
-      hostname = state.domainNameToHostName[incHostName];
-      if (!hostname) {
-        var redirectTo = state.redirectDomainName[incHostName];
-        if (redirectTo) {
-          return res.redirect(`${proto}://${redirectTo}${req.path}`);
-        } else {
-          return res.sendStatus(404);
-        }
+      hostname = state.DomainNameToHostName[incHostName];
+      if (!hostname) hostname = state.RedirectDomainNameToHostName[incHostName];
+
+      if (hostname) {
+        let redirectTo = state.HostNameToDomainName[hostname];
+        if (!redirectTo) redirectTo = `${hostname}${APP_DOMAIN_NAME}`;
+        return res.redirect(`${proto}://${redirectTo}${req.path}`);
       }
     }
+
+    if (!hostname) return res.sendStatus(404);
 
     return serve(res, hostname, req.path);
   });

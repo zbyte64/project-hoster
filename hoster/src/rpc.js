@@ -23,6 +23,10 @@ rpc.post('/set-hostnames', function(req, res) {
     console.log(`[hostname => mulithash] ${hostname} => ${multihash}`);
     assert(isIPFS.multihash(multihash), "Received site multihash that was not a multihash")
     state.HostNameToHashId[hostname] = multihash;
+
+    //instruct hoster to pin site
+    ipfs.pin.add(mulithash);
+    //TODO strategy for unpinning with rollbacks
   });
   syncState();
   return res.sendStatus(200);

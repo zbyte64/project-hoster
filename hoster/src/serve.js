@@ -22,6 +22,8 @@ function serve(res, hostname, path) {
     return res.sendStatus(404);
   }
 
+  //TODO why doesn't ipfs serve do this?
+  //res.headers.set('Content-SHA265', mulithash);
   return request(`${process.env.IPFS_GATEWAY_URL}/ipfs/${multihash}${path}`).pipe(res)
 }
 

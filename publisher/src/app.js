@@ -22,7 +22,7 @@ app.use(function(req, res, next) {
 
 app.post('/upload', function(req, res) {
   let hostname = req.user.hostname;
-  console.log("upload headers:", req.headers);
+  //console.log("upload headers:", req.headers);
   let busboy = new Busboy({ headers: req.headers });
   let uploads = [];
   let results = {};
@@ -38,14 +38,13 @@ app.post('/upload', function(req, res) {
       uploads.push(p);
     });
   });
-  busboy.on('field', function(fieldname, val, fieldnameTruncated, valTruncated, encoding, mimetype) {
-    console.log('Field [' + fieldname + ']: value: ' + inspect(val));
-  });
 
   //TODO settle on response shape
+  //response shape is a dictionary of fieldname to ipfs DAGNode add file result
   busboy.on('finish', function() {
     console.log("upload complete", uploads)
     Promise.all(uploads).then(function(success) {
+      console.log(`${hostname} uploaded: ${results}`)
       res.status(200).json(results);
     }, function(error) {
       console.error(error);
@@ -64,7 +63,7 @@ app.post('/publish', json_parser, function(req, res) {
   let index_object = new DAGNode("\u0008\u0001");
   let promises = _.map(sitemap, (object_id, name) => {
     return ipfs.object.get(object_id).then(node_link => {
-      console.log("Node link:", node_link)
+      console.log("Node link:", node_link ? true : false)
       index_object.addNodeLink(name, node_link);
     });
   });
@@ -72,13 +71,12 @@ app.post('/publish', json_parser, function(req, res) {
   Promise.all(promises).then(x => {
     return ipfs.object.put(index_object);
   }).then(dagNode => {
-    console.log("sitemap dagnode:", dagNode);
-    let payload = {};
     //TODO use canonical clean-multihash
-    payload[hostname] = bs58.encode(dagNode.multihash());
-    console.log("set-hostnames:", payload)
-    //TODO ensure site is pinned, should this be managed by hoster or publisher?
-    //ipfs.pin.add(dagNode.mulithash())
+    let dagHash = bs58.encode(dagNode.multihash())
+    console.log("sitemap dagnode:", dagHash);
+    let payload = {};
+    payload[hostname] = dagHash;
+    console.log("set-hostnames:", payload);
     return rpc('set-hostnames', payload).then(x => {
       return res.status(200).json(dagNode);
     });

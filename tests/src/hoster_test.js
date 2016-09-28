@@ -39,7 +39,10 @@ describe('hoster', () => {
     let p = jsonPost(`${API_URL}/set-domain-names`, {'examplesite': 'readme.com'});
     return p.then(function(sucess) {
       assert.equal(sucess, 'OK');
-      return pageGet(`${SERVE_URL}/readme`, 'readme.com').then(x => x.text())
+      return pageGet(`${SERVE_URL}/readme`, 'readme.com')
+    }).then(x => {
+      console.log(x.headers);
+      return x.text();
     }).then(function(readmeResponse) {
       assert(readmeResponse)
     }).catch(function(error) {

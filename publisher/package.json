@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "main": "src/index.js",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha ./tests"
+    "test": "./node_modules/mocha/bin/mocha ./tests",
+    "start": "node src/index.js"
   },
   "directories": {
     "lib": "./src"

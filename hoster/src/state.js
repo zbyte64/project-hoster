@@ -24,12 +24,12 @@ function writeState() {
       currentMultiHash = _.last(currentNodeInfo.Path.split('/'));
     }
     console.log("Resolved self info:", currentMultiHash)
-    let newDagNode = new DAGNode(state);
-    let bufferState = new Buffer(JSON.stringify(state))
-    if (currentMultiHash && false) {
-      return ipfs.object.patch.setData(currentMultiHash, newDagNode);
+    let bufferState = new Buffer(JSON.stringify(state));
+    let newDagNode = new DAGNode(bufferState);
+    if (currentMultiHash) {
+      return ipfs.object.patch.setData(currentMultiHash, bufferState);
     } else {
-      return ipfs.object.put(bufferState);
+      return ipfs.object.put(newDagNode);
     }
   }).then(dagNode => {
     let multihash = bs58.encode(dagNode.multihash());

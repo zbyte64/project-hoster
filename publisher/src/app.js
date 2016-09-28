@@ -46,7 +46,7 @@ app.post('/upload', function(req, res) {
     Promise.all(uploads).then(function(success) {
       console.log(`${hostname} uploaded: ${results}`)
       res.status(200).json(results);
-    }, function(error) {
+    }).catch(function(error) {
       console.error(error);
       res.status(500).send(error.toString());
     });

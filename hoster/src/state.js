@@ -32,8 +32,9 @@ function writeState() {
       return ipfs.object.put(bufferState);
     }
   }).then(dagNode => {
-    console.log("State dagNode:", dagNode);
-    return ipfs.name.publish('/ipfs/'+bs58.encode(dagNode.multihash()));
+    let multihash = bs58.encode(dagNode.multihash());
+    console.log("State dagNode:", multihash);
+    return ipfs.name.publish('/ipfs/'+multihash);
   }).then(woot => {
     console.log("State saved:", woot)
   }).catch(error => {

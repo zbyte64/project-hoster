@@ -12,12 +12,12 @@ describe('hoster', () => {
   it('reports internal state', () => {
     let p = jsonGet(`${API_URL}/`);
     return p.then(function(sucess) {
-      assert.deepEqual(JSON.parse(sucess), {
-        HostNameToHashId: {},
-        DomainNameToHostName: {},
-        HostNameToDomainName: {},
-        RedirectDomainNameToHostName: {}
-      });
+      assert.deepEqual(_.keys(JSON.parse(sucess)), [
+        'HostNameToHashId',
+        'DomainNameToHostName',
+        'HostNameToDomainName',
+        'RedirectDomainNameToHostName'
+      ]);
     }, function(error) {
       assert(false, error);
     })

@@ -4,6 +4,8 @@ const bodyParser = require('body-parser');
 const _ = require('lodash');
 const isIPFS = require('is-ipfs');
 const {state, syncState} = require('./state');
+const {ipfs} = require('./connections');
+
 
 var rpc = express();
 exports.rpc = rpc;
@@ -19,17 +21,19 @@ rpc.post('/set-hostnames', function(req, res) {
   if (!req.body) {
     return res.sendStatus(400);
   }
-  _.each(req.body, (multihash, hostname) => {
+  let p = Promise.all(_.map(req.body, (multihash, hostname) => {
     console.log(`[hostname => mulithash] ${hostname} => ${multihash}`);
     assert(isIPFS.multihash(multihash), "Received site multihash that was not a multihash")
+    assert(typeof hostname === "string", "Invalid hostname")
     state.HostNameToHashId[hostname] = multihash;
 
     //instruct hoster to pin site
-    ipfs.pin.add(mulithash);
+    return ipfs.pin.add(multihash);
     //TODO strategy for unpinning with rollbacks
-  });
+  }));
+  res.sendStatus(200);
   syncState();
-  return res.sendStatus(200);
+  p.then(x => console.log("sites pinned", x), e => console.error(e))
 });
 
 rpc.post('/set-domain-names', function(req, res) {

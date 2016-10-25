@@ -1,39 +1,32 @@
-var expect = require('expect.js');
-var _ = require('lodash');
-var {publish} = require('../src/publish');
+const expect = require('expect.js');
+const {app} = require('../src/index');
 
+//TODO mock servers at:
+//process.env.IPFS_API_URL
+//process.env.HOSTER_RPC_URL
 
 describe('publisher', () => {
-  let knoxClient;
-  let S3Folder;
-
-  beforeEach(() => {
-    S3Folder = {};
-    knoxClient = {
-      put(path, params) {
-        return {
-          on(event, callback) {
-            if (event === 'response') {
-              callback({statusCode: 200})
-            }
-          },
-          end(content) {
-            S3Folder[path] = content;
-            console.log("write to: "+path, content)
-          }
-        }
-      }
-    }
+  describe('upload', () => {
+    it('reads multiform and stores files on IPFS', () => {
+      request(app)
+        .post('/upload')
+        .attach('/media/image.jpg', 'tests/fixtures/image.jpg')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) throw err;
+        });
+    });
   });
 
   describe('publish', () => {
-    it('sends pages to knoxClient', () => {
-      let p = publish(knoxClient, "tenant-slug", "foo.txt", "hello world", "text/plain");
-      return p.then(function(sucess) {
-        expect(S3Folder["tenant-slug/foo.txt"]).to.be('hello world');
-      }, function(error) {
-        expect().fail(error)
-      })
-    })
+    it('reads multiform and sends rpc with new DagNode', () => {
+      request(app)
+        .post('/publish')
+        .attach('/media/index.html', 'tests/fixtures/index.html')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) throw err;
+        });
+    });
   });
-})
+});

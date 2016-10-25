@@ -50,7 +50,11 @@ function readState() {
     if (!currentNodeInfo || !currentNodeInfo.Path) return {};
     let currentMultiHash = _.last(currentNodeInfo.Path.split('/'));
     return ipfs.object.data(currentMultiHash);
-  }).then(data => {
+}, error => {
+    //could not resolve our name
+    console.warn(error);
+    return {};
+}).then(data => {
     console.log("ReadState", data.length)
     if (Buffer.isBuffer(data)) {
       let jsonStr = data.toString();

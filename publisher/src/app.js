@@ -8,6 +8,7 @@ const bs58 = require('bs58');
 
 const {rpc} = require('./rpc');
 const {ipfs} = require('./connections');
+const {addAssetToSite, removeAssetFromSite, readAssetsFromSite} = require('./models');
 
 
 var app = express();
@@ -15,11 +16,16 @@ var json_parser = bodyParser.json();
 app.use(jwt({secret: process.env.SECRET}));
 app.use(function(req, res, next) {
   if (!req.user.hostname) {
-    return res.sendStatus(403)
+    return res.sendStatus(403);
   }
-  next()
+  next();
 });
 
+
+//TODO enforce website size
+//TODO rate limit
+
+//uploading/publishing files will make the file accessable from the given fieldname as a path
 app.post('/upload', function(req, res) {
   let hostname = req.user.hostname;
   //console.log("upload headers:", req.headers);
@@ -32,21 +38,21 @@ app.post('/upload', function(req, res) {
     file.on('data', function(data) {
       //or do we use? ipfs.files.add({path:'', content: stream})
       let p = ipfs.util.addFromStream(data).then(x => {
-        //{path, hash, size} = x
+        let {path, hash, size} = x
         results[fieldname] = x;
+        return addAssetToSite(hostname, fieldname, hash, size);
       });
       uploads.push(p);
     });
   });
 
-  //TODO settle on response shape
-  //response shape is a dictionary of fieldname to ipfs DAGNode add file result
+  //response shape is a dictionary of fieldname/site-path to ipfs DAGNode add file result
   busboy.on('finish', function() {
     console.log("upload complete", uploads)
-    Promise.all(uploads).then(function(success) {
+    Promise.all(uploads).then(success => {
       console.log(`${hostname} uploaded: ${results}`)
       res.status(200).json(results);
-    }).catch(function(error) {
+    }).catch(error => {
       console.error(error);
       res.status(500).send(error.toString());
     });
@@ -54,37 +60,68 @@ app.post('/upload', function(req, res) {
   req.pipe(busboy);
 });
 
-app.post('/publish', json_parser, function(req, res) {
+
+app.post('/delete', json_parser, function(req, res) {
   let hostname = req.user.hostname;
-  let sitemap = req.body;
-  console.log("publish sitemap:", sitemap)
-  //upload to ipfs as directory object, then rpc to host
-
-  let index_object = new DAGNode("\u0008\u0001");
-  let promises = _.map(sitemap, (object_id, name) => {
-    return ipfs.object.get(object_id).then(node_link => {
-      console.log("Node link:", node_link ? true : false)
-      index_object.addNodeLink(name, node_link);
-    });
-  });
-
-  Promise.all(promises).then(x => {
-    return ipfs.object.put(index_object);
-  }).then(dagNode => {
-    //TODO use canonical clean-multihash
-    let dagHash = bs58.encode(dagNode.multihash())
-    console.log("sitemap dagnode:", dagHash);
-    let payload = {};
-    payload[hostname] = dagHash;
-    console.log("set-hostnames:", payload);
-    return rpc('set-hostnames', payload).then(x => {
-      return res.status(200).json(dagNode);
-    });
-  }).catch(error => {
+  let to_delete = req.body.filenames;
+  let promises = to_delete.map(filename => removeAssetFromSite(hostname, filename));
+  Promise.all(promises).then(results => {
+    res.status(200).json(results);
+  }, error => {
     console.error(error);
     res.status(500).send(error.toString());
   });
 });
+
+
+app.post('/publish', function(req, res) {
+  let hostname = req.user.hostname;
+  //console.log("upload headers:", req.headers);
+  let busboy = new Busboy({ headers: req.headers });
+  let index_object = new DAGNode("\u0008\u0001");
+  let uploads = [];
+  let assetsPromise = readAssetsFromSite(hostname).then(assets => {
+    assets.forEach(asset => {
+      index_object.addNodeLink(asset.name, asset.getNodeLink());
+    });
+  });
+  busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
+    console.log("File:", fieldname)
+    //CONSIDER: we can have multiple files, so we have multiple promises to wait on
+    file.on('data', function(data) {
+      //or do we use? ipfs.files.add({path:'', content: stream})
+      let p = ipfs.util.addFromStream(data).then(x => {
+        index_object.addNodeLink(fieldname, x);
+        return x;
+      });
+      uploads.push(p);
+    });
+  });
+
+  busboy.on('finish', function() {
+    console.log("upload complete", uploads);
+    let uploadsPromise = Promise.all(uploads);
+
+    Promise.all([uploadsPromise, assetsPromise]).then(success => {
+      return ipfs.object.put(index_object);
+    }).then(dagNode => {
+      //TODO use canonical clean-multihash
+      let dagHash = bs58.encode(dagNode.multihash())
+      console.log("sitemap dagnode:", dagHash);
+      let payload = {};
+      payload[hostname] = dagHash;
+      console.log("set-hostnames:", payload);
+      return rpc('set-hostnames', payload).then(x => {
+        return res.status(200).json(dagNode);
+      });
+    }).catch(error => {
+      console.error(error);
+      res.status(500).send(error.toString());
+    });
+  });
+  req.pipe(busboy);
+});
+
 
 app.post('/set-domain', json_parser, function(req, res) {
   //associate a hostname to a domain

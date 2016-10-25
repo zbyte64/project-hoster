@@ -14,12 +14,12 @@ var SiteAsset = sequelize.define('siteasset', {
   size: Sequelize.INTEGER,
 }, {
   indexes: [{
-    name: 'indentified',
-    fields: ['indentifier'],
+    name: 'identified',
+    fields: ['identifier'],
   }, {
-    name: 'indentified_path',
+    name: 'identified_path',
     unique: true,
-    fields: ['indentifier', 'path'],
+    fields: ['identifier', 'path'],
   }]
 });
 

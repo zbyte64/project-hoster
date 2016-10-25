@@ -20,6 +20,7 @@ publisher:
   links:
     - ipfs
     - hoster
+    - postgresql
   volumes:
     - ./publisher/src:/opt/app/src
   environment:
@@ -27,6 +28,8 @@ publisher:
     HOSTER_RPC_URL: "http://hoster:8100"
     SECRET: "foo"
     PURGE_TOKEN: "foo"
+    DATABASE_URL: "postgres://user:pass@postgresql:5432/dbname"
+  command: ./run.sh
 cacher:
   build: ./cacher
   ports:
@@ -57,3 +60,9 @@ tests:
     - ipfs
     - hoster
     - publisher
+postgresql:
+  image: postgres
+  environment:
+    POSTGRES_USER: user
+    POSTGRES_PASSWORD: pass
+    POSTGRES_DB: dbname

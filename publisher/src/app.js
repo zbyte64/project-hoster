@@ -80,11 +80,13 @@ app.post('/publish', function(req, res) {
   let busboy = new Busboy({ headers: req.headers });
   let index_object = new DAGNode("\u0008\u0001");
   let uploads = [];
+  
   let assetsPromise = readAssetsFromSite(hostname).then(assets => {
     assets.forEach(asset => {
       index_object.addNodeLink(asset.name, asset.getNodeLink());
     });
   });
+
   busboy.on('file', function(fieldname, file, filename, encoding, mimetype) {
     console.log("File:", fieldname)
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on

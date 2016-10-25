@@ -20,7 +20,7 @@ describe('publisher', () => {
         }]
       });
     }, function(error) {
-      assert.assert(false, error);
+      assert(false, error);
     })
   });
 

@@ -1,5 +1,6 @@
 const expect = require('expect.js');
 const {app} = require('../src/index');
+const request = require('supertest');
 
 //TODO mock servers at:
 //process.env.IPFS_API_URL

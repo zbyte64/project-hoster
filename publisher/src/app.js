@@ -37,9 +37,10 @@ app.post('/upload', function(req, res) {
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on
     file.on('data', function(data) {
       //or do we use? ipfs.files.add({path:'', content: stream})
-      let p = ipfs.util.addFromStream(data).then(x => {
-        let {path, hash, size} = x
-        results[fieldname] = x;
+      let p = ipfs.util.addFromStream(data).then(uploadResults => {
+        let uploadResult = uploadResults[0];
+        let {hash, size} = uploadResult;
+        results[fieldname] = uploadResult;
         return addAssetToSite(hostname, fieldname, hash, size);
       });
       uploads.push(p);
@@ -80,10 +81,10 @@ app.post('/publish', function(req, res) {
   let busboy = new Busboy({ headers: req.headers });
   let index_object = new DAGNode("\u0008\u0001");
   let uploads = [];
-  
+
   let assetsPromise = readAssetsFromSite(hostname).then(assets => {
     assets.forEach(asset => {
-      index_object.addNodeLink(asset.name, asset.getNodeLink());
+      index_object.addRawLink(asset);
     });
   });
 
@@ -92,9 +93,12 @@ app.post('/publish', function(req, res) {
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on
     file.on('data', function(data) {
       //or do we use? ipfs.files.add({path:'', content: stream})
-      let p = ipfs.util.addFromStream(data).then(x => {
-        index_object.addNodeLink(fieldname, x);
-        return x;
+      let p = ipfs.util.addFromStream(data).then(uploadResults => {
+        console.log("addFromStream result:", uploadResults);
+        let dagInfo = uploadResults[0];
+        let link = new DAGLink(fieldname, dagInfo.size, dagInfo.hash);
+        index_object.addRawLink(link);
+        return link;
       });
       uploads.push(p);
     });

@@ -13,11 +13,11 @@ describe('publisher', () => {
     let p = sendFiles(`${SERVER_URL}/upload`, {"media/foo.txt": new Buffer("hello world")});
     return p.then(function(sucess) {
       assert.deepEqual(JSON.parse(sucess), {
-        "media/foo.txt":[{
+        "media/foo.txt": {
           "path":"Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
           "hash":"Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD",
           "size":19
-        }]
+        }
       });
     }, function(error) {
       assert(false, error);
@@ -29,17 +29,17 @@ describe('publisher', () => {
     return p.then(function(sucess) {
       assert.deepEqual(JSON.parse(sucess), {
         Data: '\b\u0001',
-        Hash: "QmNtssVPTzUsTy7ZiT8XsiSCUcg9xRkZLM4bTAAntbf6uW",
+        Hash: "QmS2Ywbzk9TnWLqDR137gNYpg57ziJpJ21wUvLvXsNQwbA",
         Links: [{
-          Name: 'media/foo.txt',
-          Size: 1106,
-          Hash: 'QmQtb4As9XSjLust2gRGAyyc76NghPbfZjwqZGmRpRa1Qg'
-        }, {
           Name: 'index.html',
-          Size: 1106,
-          Hash: 'QmQtb4As9XSjLust2gRGAyyc76NghPbfZjwqZGmRpRa1Qg'
+          Size: 21,
+          Hash: 'QmepEzGBkDQ7a8xCTVYZvuZL2C7FUxaaC75FSY8pGb1v7b'
+        }, {
+          Name: 'media/foo.txt',
+          Size: 19,
+          Hash: 'Qmf412jQZiuVUtdgnB36FXFX7xg5V6KEbSJ4dpQuhkLyfD'
         }],
-        Size: 1159
+        Size: 151
       });
     }, function(error) {
       assert(false, error);

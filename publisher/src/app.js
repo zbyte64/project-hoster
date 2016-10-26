@@ -13,9 +13,12 @@ const {addAssetToSite, removeAssetFromSite, readAssetsFromSite} = require('./mod
 
 var app = express();
 var json_parser = bodyParser.json();
-app.use(jwt({secret: process.env.SECRET}));
+app.use(jwt({
+  secret: process.env.SECRET,
+  credentialsRequired: false,
+}));
 app.use(function(req, res, next) {
-  if (!req.user.hostname) {
+  if (!req.user || !req.user.hostname) {
     return res.sendStatus(403);
   }
   next();

@@ -1,11 +1,15 @@
 const {app} = require('./app');
 const {sequelize} = require('./models');
 
+function sync() {
+  return sequelize.sync();
+}
+
 exports.app = app;
-exports.sync = sequelize.sync;
+exports.sync = sync;
 
 if (require.main === module) {
-  sequelize.sync().then(function () {
+  sync().then(function () {
     var server = app.listen(8000, function() {
       var host = server.address().address;
       var port = server.address().port;

@@ -1,7 +1,8 @@
 const {app} = require('./app');
 const {sequelize} = require('./models');
 
-exports.app = app
+exports.app = app;
+exports.sync = sequelize.sync;
 
 if (require.main === module) {
   sequelize.sync().then(function () {

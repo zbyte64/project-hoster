@@ -4,8 +4,6 @@ const _ = require('lodash');
 const {sendFiles, jsonPost} = require('./connections');
 
 const SERVER_URL = "http://publisher:8000";
-const README_HASH = "QmPZ9gcCEpqKTo6aq61g2nXGUhM4iCL3ewB6LDXZCtioEB"
-const SITE_HASH = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG"
 
 
 describe('publisher', () => {

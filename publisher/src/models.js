@@ -37,7 +37,7 @@ function addAssetToSite(identifier, path, hash, size) {
     //fields: ["hash", "size"]
   };
 
-  return SiteAsset.upsert(values, options);
+  return SiteAsset.upsert(values, options).then(() => {path, hash, size});
 }
 exports.addAssetToSite = addAssetToSite;
 

@@ -13,6 +13,7 @@ hoster:
     LANDING_URL: "https://example.com"
     REDIRECT_PROTOCOL: "http"
     DOMAIN_NAME: "hosted.com"
+  command: ./run.sh
 publisher:
   build: ./publisher
   ports:

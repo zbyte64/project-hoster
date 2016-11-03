@@ -39,11 +39,10 @@ app.post('/upload', function(req, res) {
     console.log("File:", fieldname)
     //CONSIDER: we can have multiple files, so we have multiple promises to wait on
     file.on('data', function(data) {
-      //or do we use? ipfs.files.add({path:'', content: stream})
       let p = ipfs.util.addFromStream(data).then(uploadResults => {
         let uploadResult = uploadResults[0];
         let {hash, size} = uploadResult;
-        results[fieldname] = uploadResult;
+        results[fieldname] = {hash, size, path: fieldname};
         return addAssetToSite(hostname, fieldname, hash, size);
       });
       uploads.push(p);

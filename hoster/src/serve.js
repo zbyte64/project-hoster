@@ -48,12 +48,15 @@ if (process.env.DOMAIN_NAME) {
 
     // http://<DOMAIN_NAME>/
     if (incHostName === process.env.DOMAIN_NAME) {
+      if (req.path.substr(0, 6) == '/ipfs/') {
+        return request(`${process.env.IPFS_GATEWAY_URL}${req.path}`).pipe(res);
+      }
       return res.redirect(process.env.LANDING_URL);
     }
 
     // http://<OLD_DOMAIN_NAME>/
     if (incHostName === process.env.OLD_DOMAIN_NAME) {
-      return res.redirect(process.env.LANDING_URL);
+      return res.redirect(process.env.DOMAIN_NAME);
     }
 
     if (_.endsWith(incHostName, APP_DOMAIN_NAME)) {
